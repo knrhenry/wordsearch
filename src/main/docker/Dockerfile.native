@@ -1,0 +1,5 @@
+# Dockerfile.native is deprecated for this project. Use Dockerfile.jvm for JVM container builds.
+# FROM scratch
+# COPY target/*-runner /work/
+# ENTRYPOINT ["/work/wordsearch-1.0-SNAPSHOT-runner"]
+

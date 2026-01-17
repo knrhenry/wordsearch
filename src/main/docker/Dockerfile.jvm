@@ -1,0 +1,8 @@
+# JVM Dockerfile for Quarkus
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /work/
+COPY target/quarkus-app/lib/ /work/lib/
+COPY target/quarkus-app/*.jar /work/
+COPY target/quarkus-app/app/ /work/app/
+COPY target/quarkus-app/quarkus/ /work/quarkus/
+ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
