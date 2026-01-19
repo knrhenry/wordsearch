@@ -3,6 +3,7 @@ package com.knrhenry.wordsearch.dto;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+/** DTO for word search puzzle generation requests. */
 public class WordSearchRequest {
   @Schema(
       description =

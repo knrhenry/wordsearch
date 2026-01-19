@@ -1,8 +1,10 @@
 package com.knrhenry.wordsearch.dto;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+/** DTO for word search puzzle generation results. */
 public class WordSearchResult {
   @Schema(description = "The generated word search grid.")
   private char[][] grid;
@@ -20,7 +22,7 @@ public class WordSearchResult {
   private boolean isPdf;
 
   @Schema(description = "JSON representation of the puzzle, if requested.")
-  private String json;
+  private ObjectNode json;
 
   public char[][] getGrid() {
     return grid;
@@ -62,11 +64,11 @@ public class WordSearchResult {
     this.isPdf = isPdf;
   }
 
-  public String getJson() {
+  public ObjectNode getJson() {
     return json;
   }
 
-  public void setJson(String json) {
+  public void setJson(ObjectNode json) {
     this.json = json;
   }
 

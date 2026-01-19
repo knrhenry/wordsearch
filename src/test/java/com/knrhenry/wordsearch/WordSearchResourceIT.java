@@ -18,6 +18,10 @@ import jakarta.enterprise.inject.Alternative;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Integration tests for the WordSearch REST API. Tests both JSON and PDF responses, as well as
+ * error handling.
+ */
 @QuarkusTest
 public class WordSearchResourceIT {
 
@@ -148,7 +152,18 @@ public class WordSearchResourceIT {
         .body(containsString("PDF generation failed"));
   }
 
-  // Add test alternative for PDF generator failure simulation
+  @Test
+  public void testJsonGenerationFailureErrorStructure() throws Exception {
+    given()
+        .contentType(ContentType.JSON)
+        .body(createRequestAsJsonString(new String[] {"exception", "banana"}, false))
+        .post(WORDSEARCH_ENDPOINT_PATH)
+        .then()
+        .statusCode(500)
+        .body(containsString("JSON generation failed"));
+  }
+
+  /** Alternative PDF generator that simulates a failure when the first word is "exception". */
   @Alternative
   @Priority(1)
   @ApplicationScoped
@@ -161,6 +176,23 @@ public class WordSearchResourceIT {
         throw new IOException("PDF generation failed");
       } else {
         return super.generatePdf(wordSearch);
+      }
+    }
+  }
+
+  /** Alternative JSON generator that simulates a failure when the first word is "exception". */
+  @Alternative
+  @Priority(1)
+  @ApplicationScoped
+  public static class TestJsonGeneratorFailure extends WordSearchJsonGenerator {
+    @Override
+    public ObjectNode generateJson(WordSearch wordSearch) throws JsonProcessingException {
+      if (wordSearch != null
+          && !wordSearch.getWords().isEmpty()
+          && wordSearch.getWords().get(0).equals("exception")) {
+        throw new JsonProcessingException("JSON generation failed") {};
+      } else {
+        return super.generateJson(wordSearch);
       }
     }
   }

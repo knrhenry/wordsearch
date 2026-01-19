@@ -15,7 +15,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -24,7 +23,6 @@ class WordSearchLambdaHandlerTest {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  @DisplayName("Lambda handler returns JSON for valid input")
   void testJsonResponse() throws Exception {
     String event = "{\"body\":{\"words\":\"apple,banana,cherry\",\"pdf\":false}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -43,7 +41,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler returns PDF as base64 for pdf=true")
   void testPdfResponse() throws Exception {
     String event = "{\"body\":{\"words\":\"apple,banana,cherry\",\"pdf\":true}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -61,7 +58,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler returns error for missing words")
   void testMissingWords() throws Exception {
     String event = "{\"body\":{\"pdf\":false}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -76,7 +72,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler handles queryStringParameters input")
   void testQueryStringParameters() throws Exception {
     String event = "{\"queryStringParameters\":{\"words\":\"apple,banana\",\"pdf\":false}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -91,7 +86,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler handles queryStringParameters input")
   void testQueryStringParametersMissingWords() throws Exception {
     String event = "{\"queryStringParameters\":{\"pdf\":false}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -106,7 +100,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler handles queryStringParameters input")
   void testQueryStringParametersMissingPdfParameter() throws Exception {
     String event = "{\"queryStringParameters\":{\"words\":\"apple,banana\"}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -121,7 +114,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler handles queryStringParameters input")
   void testTextualBody() throws Exception {
     String event = "{\"body\":\"{\\\"words\\\":\\\"apple,banana\\\",\\\"pdf\\\":false}\"}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -136,7 +128,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler handles queryStringParameters input")
   void testWordsAsArrayInBody() throws Exception {
     String event = "{\"body\":{\"words\":[\"apple\",\"banana\"],\"pdf\":false}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -151,7 +142,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler handles queryStringParameters input")
   void testMissingPdfParameter() throws Exception {
     String event = "{\"body\":{\"words\":\"apple,banana\"}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -166,7 +156,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler returns error for missing words")
   void testMissingBodyAndNoQueryStringParameters() throws Exception {
     String event = "{}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));
@@ -181,7 +170,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler returns error for long word")
   void testWordTooLong() throws Exception {
     String longWord = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDE"; // 31 chars (exceeds max)
     String event = String.format("{\"body\":{\"words\":\"%s\",\"pdf\":false}}", longWord);
@@ -197,7 +185,6 @@ class WordSearchLambdaHandlerTest {
   }
 
   @Test
-  @DisplayName("Lambda handler returns error for long word")
   void test500Error() throws Exception {
     String event = "{\"body\":{\"words\":\"apple,banana,cherry\",\"pdf\":false}}";
     ByteArrayInputStream in = new ByteArrayInputStream(event.getBytes(StandardCharsets.UTF_8));

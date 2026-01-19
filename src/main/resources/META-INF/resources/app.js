@@ -5,13 +5,13 @@ document.getElementById('wordsearch-form').addEventListener('submit', async func
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = 'Loading...';
 
-    const apiUrl = 'https://89mpbnacq1.execute-api.us-west-2.amazonaws.com/wordsearch';
+    const apiUrl = '/api/wordsearch';
 
     try {
-        const response = await fetch(apiUrl + (pdf ? '?pdf=true' : ''), {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ words: words.split(',').map(w => w.trim()) })
+            body: JSON.stringify({ words: words.split(',').map(w => w.trim()), pdf: pdf })
         });
         if (pdf) {
             // Try to parse error JSON first

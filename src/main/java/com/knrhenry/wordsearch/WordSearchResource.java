@@ -2,6 +2,7 @@ package com.knrhenry.wordsearch;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.knrhenry.wordsearch.dto.WordSearchRequest;
 import com.knrhenry.wordsearch.dto.WordSearchResult;
 import jakarta.inject.Inject;
@@ -12,7 +13,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -156,16 +156,17 @@ public class WordSearchResource {
           .header("Expires", "0")
           .build();
     } else {
-      String[][] gridStr = new String[result.getGrid().length][result.getGrid()[0].length];
-      for (int i = 0; i < result.getGrid().length; i++) {
-        for (int j = 0; j < result.getGrid()[i].length; j++) {
-          gridStr[i][j] = String.valueOf(result.getGrid()[i][j]);
-        }
-      }
-      Map<String, Object> response = new HashMap<>();
-      response.put("grid", gridStr);
-      response.put("words", result.getWords());
-      return Response.ok(response, MediaType.APPLICATION_JSON).build();
+      ObjectNode json = result.getJson();
+      //      String[][] gridStr = new String[result.getGrid().length][result.getGrid()[0].length];
+      //      for (int i = 0; i < result.getGrid().length; i++) {
+      //        for (int j = 0; j < result.getGrid()[i].length; j++) {
+      //          gridStr[i][j] = String.valueOf(result.getGrid()[i][j]);
+      //        }
+      //      }
+      //      Map<String, Object> response = new HashMap<>();
+      //      response.put("grid", gridStr);
+      //      response.put("words", result.getWords());
+      return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
   }
 }

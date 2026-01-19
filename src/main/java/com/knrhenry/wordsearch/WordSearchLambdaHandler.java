@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -66,14 +67,14 @@ public class WordSearchLambdaHandler implements RequestStreamHandler {
         throw new WordSearchException("No words provided");
       }
       WordSearch ws = WordSearch.create(words);
+      byte[] pdfBytes = null;
+      ObjectNode jsonNode = null;
       if (wantsPdf) {
-        byte[] pdfBytes = new WordSearchPdfGenerator().generatePdf(ws);
-        writeSuccessResponse(output, true, pdfBytes, null);
+        pdfBytes = new WordSearchPdfGenerator().generatePdf(ws);
       } else {
-        WordSearchJsonGenerator jsonGen = new WordSearchJsonGenerator();
-        final String result = jsonGen.generateJson(ws);
-        writeSuccessResponse(output, false, null, result);
+        jsonNode = new WordSearchJsonGenerator().generateJson(ws);
       }
+      writeSuccessResponse(output, wantsPdf, pdfBytes, jsonNode);
     } catch (WordSearchException e) {
       writeErrorResponse(output, 400, e.getMessage());
     } catch (Exception e) {
@@ -87,7 +88,7 @@ public class WordSearchLambdaHandler implements RequestStreamHandler {
   }
 
   private void writeSuccessResponse(
-      OutputStream output, boolean isPdf, byte[] pdfBytes, String json) throws IOException {
+      OutputStream output, boolean isPdf, byte[] pdfBytes, ObjectNode json) throws IOException {
     Map<String, Object> lambdaResp = new HashMap<>();
     lambdaResp.put("statusCode", 200);
     Map<String, String> headers = new HashMap<>();
@@ -99,7 +100,7 @@ public class WordSearchLambdaHandler implements RequestStreamHandler {
     } else {
       headers.put("Content-Type", "application/json");
       lambdaResp.put("isBase64Encoded", false);
-      lambdaResp.put("body", json);
+      lambdaResp.put("body", objectMapper.writeValueAsString(json));
     }
     lambdaResp.put("headers", headers);
     objectMapper.writeValue(output, lambdaResp);

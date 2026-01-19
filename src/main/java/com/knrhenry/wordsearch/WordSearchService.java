@@ -12,9 +12,18 @@ import java.io.IOException;
 @ApplicationScoped
 public class WordSearchService {
 
+  /** PDF generator for word search puzzles. */
   @Inject WordSearchPdfGenerator pdfGenerator;
+
+  /** JSON generator for word search puzzles. */
   @Inject WordSearchJsonGenerator jsonGenerator;
 
+  /**
+   * Generates a word search puzzle based on the provided request.
+   *
+   * @param request the word search request containing words and output format
+   * @return the generated word search result
+   */
   public WordSearchResult generatePuzzle(WordSearchRequest request) {
     WordSearchResult result = new WordSearchResult();
     if (request == null || request.getWords() == null || request.getWords().isEmpty()) {

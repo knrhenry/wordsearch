@@ -1,70 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Word Search Generator</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    label, input, textarea, button { display: block; margin: 1em 0; }
-    textarea { width: 300px; height: 100px; }
-    .result { margin-top: 2em; white-space: pre; background: #f8f8f8; padding: 1em; border-radius: 4px; font-family: monospace; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Generator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Word Search Generator</h1>
-  <form id="wordsearch-form">
-    <label for="words">Enter words (comma separated):</label>
-    <textarea id="words" name="words" required></textarea>
-    <label for="pdf" style="display: inline-flex; align-items: center; gap: 0.5em;">
-      <input type="checkbox" id="pdf" name="pdf" style="margin: 0;"> Generate PDF
-    </label>
-    <button type="submit">Generate</button>
-  </form>
-  <div id="result" class="result"></div>
-  <script>
-    document.getElementById('wordsearch-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const words = document.getElementById('words').value.split(',').map(w => w.trim()).filter(w => w);
-      const pdf = document.getElementById('pdf').checked;
-      const payload = JSON.stringify({ words, pdf });
-      const resultDiv = document.getElementById('result');
-      resultDiv.textContent = 'Generating...';
-      try {
-        const response = await fetch('/api/wordsearch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-        if (pdf) {
-          if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank'; // Open in new tab
-            a.textContent = 'View PDF';
-            resultDiv.innerHTML = '';
-            resultDiv.appendChild(a);
-          } else {
-            resultDiv.textContent = 'PDF generation failed.';
-          }
-        } else {
-          if (response.ok) {
-            const data = await response.json();
-            // Pad each letter for better alignment
-            let gridText = data.grid.map(row => row.map(cell => cell.padEnd(2, ' ')).join('')).join('\n');
-            let gridHtml = `<pre style="font-family: 'Fira Mono', 'Consolas', 'Liberation Mono', 'Menlo', 'monospace', 'sans-serif'; font-size: 1.1em; letter-spacing: 1px;">${gridText}</pre>`;
-            let wordsHtml = `<div style="margin-top: 1em;"><strong>Words:</strong> ${data.words.join(', ')}</div>`;
-            resultDiv.innerHTML = gridHtml + wordsHtml;
-          } else {
-            const error = await response.json();
-            resultDiv.textContent = 'Error: ' + (error.error || JSON.stringify(error));
-          }
-        }
-      } catch (err) {
-        resultDiv.textContent = 'Request failed: ' + err;
-      }
-    });
-  </script>
+    <h1>Word Search Generator</h1>
+    <form id="wordsearch-form">
+        <label for="words">Enter words (comma separated):</label><br>
+        <input type="text" id="words" name="words" size="80" required><br><br>
+        <label for="pdf">PDF Output:</label>
+        <input type="checkbox" id="pdf" name="pdf"><br><br>
+        <button type="submit">Generate</button>
+    </form>
+    <div id="result"></div>
+    <script src="app.js"></script>
 </body>
 </html>

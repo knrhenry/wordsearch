@@ -13,6 +13,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.knrhenry.wordsearch.dto.WordSearchRequest;
 import com.knrhenry.wordsearch.dto.WordSearchResult;
 import com.lowagie.text.DocumentException;
@@ -20,7 +22,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,33 +37,31 @@ class WordSearchServiceTest {
   @InjectMocks WordSearchService service;
 
   @Test
-  @DisplayName("generatePuzzle returns grid and words for valid request")
-  void testGeneratePuzzleSuccess() throws Exception {
+  void testGeneratePuzzleReturnsGridWordsAndJsonForValidRequest() throws Exception {
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(List.of("apple", "banana", "cherry"));
     req.setPdf(false);
-    String expectedJsonString = String.format("{\"key\":\"%s\"}", UUID.randomUUID());
-    prepareJsonGeneratorMock(req.getWords(), expectedJsonString);
+    ObjectNode expectedJson =
+        new ObjectMapper().createObjectNode().put("key", UUID.randomUUID().toString());
+    prepareJsonGeneratorMock(req.getWords(), expectedJson);
     WordSearchResult result = service.generatePuzzle(req);
     assertThat("Grid should not be null", result.getGrid(), notNullValue());
     assertThat(
         "Words should match input", result.getWords(), is(List.of("apple", "banana", "cherry")));
     assertThat("Error should be null for valid request", result.getError(), nullValue());
     assertThat("PDF flag should be false for non-PDF request", result.isPdf(), is(false));
-    assertThat("Expected JSON should be returned", result.getJson(), is(expectedJsonString));
+    assertThat("Expected JSON should be returned", result.getJson(), is(expectedJson));
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for empty word list")
-  void testGeneratePuzzleNullRequest() {
+  void testGeneratePuzzleReturnsErrorForNullRequest() {
     WordSearchResult result = service.generatePuzzle(null);
     assertThat("Should be error for empty word list", result.isError(), is(true));
     assertThat("Error message should mention empty", result.getError(), containsString("empty"));
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for empty word list")
-  void testGeneratePuzzleEmptyWords() {
+  void testGeneratePuzzleReturnsErrorForEmptyWordList() {
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(List.of());
     req.setPdf(false);
@@ -72,8 +71,7 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for empty word list")
-  void testGeneratePuzzleNullWords() {
+  void testGeneratePuzzleReturnsErrorForNullWordList() {
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(null);
     req.setPdf(false);
@@ -83,8 +81,7 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for too many words")
-  void testGeneratePuzzleTooManyWords() {
+  void testGeneratePuzzleReturnsErrorForTooManyWords() {
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(range(0, 21).mapToObj(i -> "word" + i).toList());
     req.setPdf(false);
@@ -97,8 +94,7 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for word too long")
-  void testGeneratePuzzleWordTooLong() {
+  void testGeneratePuzzleReturnsErrorForWordExceedingMaxLength() {
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(List.of("abcdefghijklmnopqrstuvwxyzabcde")); // 31 chars
     req.setPdf(false);
@@ -111,8 +107,7 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle sets PDF bytes for PDF request and passes correct WordSearch object")
-  void testGeneratePuzzlePdf() throws Exception {
+  void testGeneratePuzzleSetsPdfBytesAndValidatesWordSearchObject() throws Exception {
     WordSearchRequest req = new WordSearchRequest();
     List<String> expectedWords = List.of("apple", "banana");
     req.setWords(expectedWords);
@@ -129,8 +124,7 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for IOException PDF generation failure")
-  void testGeneratePuzzlePdfFailure_IOException() throws Exception {
+  void testGeneratePuzzleReturnsErrorForIOExceptionDuringPdfGeneration() throws Exception {
     doThrow(new IOException("Simulated PDF failure"))
         .when(pdfGenerator)
         .generatePdf(any(WordSearch.class));
@@ -146,8 +140,7 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for DocumentException PDF generation failure")
-  void testGeneratePuzzlePdfFailure_DocumentException() throws Exception {
+  void testGeneratePuzzleReturnsErrorForDocumentExceptionDuringPdfGeneration() throws Exception {
     doThrow(new DocumentException("Simulated PDF failure"))
         .when(pdfGenerator)
         .generatePdf(any(WordSearch.class));
@@ -163,8 +156,8 @@ class WordSearchServiceTest {
   }
 
   @Test
-  @DisplayName("generatePuzzle returns error for JsonProcessingException PDF generation failure")
-  void testGeneratePuzzleJsonFailure_JsonProcessingException() throws Exception {
+  void testGeneratePuzzleReturnsErrorForJsonProcessingExceptionDuringJsonGeneration()
+      throws Exception {
     doThrow(new JsonProcessingException("Simulated JSON failure") {})
         .when(jsonGenerator)
         .generateJson(any(WordSearch.class));
@@ -191,13 +184,13 @@ class WordSearchServiceTest {
         .generatePdf(any(WordSearch.class));
   }
 
-  private void prepareJsonGeneratorMock(List<String> expectedWords, String expectedJsonString)
+  private void prepareJsonGeneratorMock(List<String> expectedWords, ObjectNode expectedJson)
       throws Exception {
     doAnswer(
             invocation -> {
               WordSearch ws = invocation.getArgument(0);
               assertWordSearchIsAsExpected(expectedWords, ws);
-              return expectedJsonString;
+              return expectedJson;
             })
         .when(jsonGenerator)
         .generateJson(any(WordSearch.class));
