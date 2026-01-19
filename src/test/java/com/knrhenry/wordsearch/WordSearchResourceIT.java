@@ -16,15 +16,12 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/**
- * Integration tests for the WordSearchResource REST API, including PDF generation and error cases.
- */
 @QuarkusTest
-public class WordSearchResourceTest {
+public class WordSearchResourceIT {
+
+  public static final String WORDSEARCH_ENDPOINT_PATH = "/api/wordsearch";
 
   private static String createRequestAsJsonString(String[] words, boolean pdf)
       throws JsonProcessingException {
@@ -44,7 +41,7 @@ public class WordSearchResourceTest {
     given()
         .contentType(ContentType.JSON)
         .body(createRequestAsJsonString(new String[] {"apple", "banana", "cherry"}, false))
-        .post("/api/wordsearch")
+        .post(WORDSEARCH_ENDPOINT_PATH)
         .then()
         .statusCode(200)
         .body(
@@ -60,7 +57,7 @@ public class WordSearchResourceTest {
         given()
             .contentType(ContentType.JSON)
             .body(createRequestAsJsonString(new String[] {"apple", "banana", "cherry"}, true))
-            .post("/api/wordsearch")
+            .post(WORDSEARCH_ENDPOINT_PATH)
             .then()
             .statusCode(200)
             .header("Content-Type", containsString("application/pdf"))
@@ -81,7 +78,7 @@ public class WordSearchResourceTest {
     given()
         .contentType(ContentType.JSON)
         .body(createRequestAsJsonString(words, false))
-        .post("/api/wordsearch")
+        .post(WORDSEARCH_ENDPOINT_PATH)
         .then()
         .statusCode(400)
         .body(containsString("Too many words"));
@@ -92,7 +89,7 @@ public class WordSearchResourceTest {
     given()
         .contentType(ContentType.JSON)
         .body(createRequestAsJsonString(new String[] {}, false))
-        .post("/api/wordsearch")
+        .post(WORDSEARCH_ENDPOINT_PATH)
         .then()
         .statusCode(400)
         .body(containsString("Word list must not be empty"));
@@ -104,7 +101,7 @@ public class WordSearchResourceTest {
     given()
         .contentType(ContentType.JSON)
         .body(createRequestAsJsonString(new String[] {longWord}, false))
-        .post("/api/wordsearch")
+        .post(WORDSEARCH_ENDPOINT_PATH)
         .then()
         .statusCode(400)
         .body(
@@ -118,7 +115,7 @@ public class WordSearchResourceTest {
         given()
             .contentType(ContentType.JSON)
             .body(createRequestAsJsonString(new String[] {"apple", "banana"}, false))
-            .post("/api/wordsearch")
+            .post(WORDSEARCH_ENDPOINT_PATH)
             .then()
             .statusCode(200)
             .contentType(ContentType.JSON)
@@ -133,7 +130,7 @@ public class WordSearchResourceTest {
     given()
         .contentType(ContentType.JSON)
         .body(createRequestAsJsonString(new String[] {"apple", "banana"}, true))
-        .post("/api/wordsearch")
+        .post(WORDSEARCH_ENDPOINT_PATH)
         .then()
         .statusCode(200)
         .header("Content-Type", containsString("application/pdf"))
@@ -145,24 +142,25 @@ public class WordSearchResourceTest {
     given()
         .contentType(ContentType.JSON)
         .body(createRequestAsJsonString(new String[] {"exception", "banana"}, true))
-        .post("/api/wordsearch")
+        .post(WORDSEARCH_ENDPOINT_PATH)
         .then()
         .statusCode(500)
         .body(containsString("PDF generation failed"));
   }
 
-  /** Alternative PDF generator that simulates failure for testing. */
+  // Add test alternative for PDF generator failure simulation
   @Alternative
   @Priority(1)
   @ApplicationScoped
   public static class TestPdfGeneratorFailure extends WordSearchPdfGenerator {
     @Override
-    public void generatePdf(OutputStream out, char[][] grid, int gridSize, List<String> words)
-        throws IOException {
-      if (words != null && !words.isEmpty() && words.get(0).equals("exception")) {
+    public byte[] generatePdf(WordSearch wordSearch) throws IOException {
+      if (wordSearch != null
+          && !wordSearch.getWords().isEmpty()
+          && wordSearch.getWords().get(0).equals("exception")) {
         throw new IOException("PDF generation failed");
       } else {
-        super.generatePdf(out, grid, gridSize, words);
+        return super.generatePdf(wordSearch);
       }
     }
   }

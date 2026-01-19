@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,64 +63,57 @@ public class WordSearchLambdaHandler implements RequestStreamHandler {
         }
       }
       if (words == null) {
-        throw new IllegalArgumentException("No words provided");
+        throw new WordSearchException("No words provided");
       }
-      WordSearch ws = new WordSearch(words);
+      WordSearch ws = WordSearch.create(words);
       if (wantsPdf) {
-        ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-        new WordSearchPdfGenerator()
-            .generatePdf(pdfOut, ws.getGrid(), ws.getGrid().length, ws.getWords());
-        final byte[] pdfBytes = pdfOut.toByteArray();
-        Map<String, Object> lambdaResp = new HashMap<>();
-        lambdaResp.put("statusCode", 200);
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/pdf");
-        headers.put("Content-Disposition", "attachment; filename=wordsearch.pdf");
-        lambdaResp.put("headers", headers);
-        lambdaResp.put("isBase64Encoded", true);
-        lambdaResp.put("body", Base64.getEncoder().encodeToString(pdfBytes));
-        objectMapper.writeValue(output, lambdaResp);
+        byte[] pdfBytes = new WordSearchPdfGenerator().generatePdf(ws);
+        writeSuccessResponse(output, true, pdfBytes, null);
       } else {
-        // JSON response
-        final String result = ws.toJson();
-        Map<String, Object> lambdaResp = new HashMap<>();
-        lambdaResp.put("statusCode", 200);
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        lambdaResp.put("headers", headers);
-        lambdaResp.put("isBase64Encoded", false);
-        lambdaResp.put("body", result);
-        objectMapper.writeValue(output, lambdaResp);
+        WordSearchJsonGenerator jsonGen = new WordSearchJsonGenerator();
+        final String result = jsonGen.generateJson(ws);
+        writeSuccessResponse(output, false, null, result);
       }
-    } catch (IllegalArgumentException e) {
-      Map<String, Object> errorResp = new HashMap<>();
-      errorResp.put("statusCode", 400);
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
-      errorResp.put("headers", headers);
-      errorResp.put("isBase64Encoded", false);
-      errorResp.put("body", String.format("{\"error\":\"%s\"}", e.getMessage()));
-      objectMapper.writeValue(output, errorResp);
+    } catch (WordSearchException e) {
+      writeErrorResponse(output, 400, e.getMessage());
     } catch (Exception e) {
-      Map<String, Object> errorResp = new HashMap<>();
-      errorResp.put("statusCode", 500);
-      Map<String, String> headers = new HashMap<>();
-      headers.put("Content-Type", "application/json");
-      errorResp.put("headers", headers);
-      errorResp.put("isBase64Encoded", false);
-      errorResp.put("body", String.format("{\"error\":\"%s\"}", e.getMessage()));
-      objectMapper.writeValue(output, errorResp);
+      writeErrorResponse(output, 500, e.getMessage());
     }
   }
 
-  /**
-   * Parses a comma-separated string of words into a list.
-   *
-   * @param wordsStr the comma-separated string
-   * @return list of words
-   */
   private static List<String> parseWords(String wordsStr) {
     // Split by comma, trim, and filter out empty
     return Arrays.stream(wordsStr.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+  }
+
+  private void writeSuccessResponse(
+      OutputStream output, boolean isPdf, byte[] pdfBytes, String json) throws IOException {
+    Map<String, Object> lambdaResp = new HashMap<>();
+    lambdaResp.put("statusCode", 200);
+    Map<String, String> headers = new HashMap<>();
+    if (isPdf) {
+      headers.put("Content-Type", "application/pdf");
+      headers.put("Content-Disposition", "attachment; filename=wordsearch.pdf");
+      lambdaResp.put("isBase64Encoded", true);
+      lambdaResp.put("body", Base64.getEncoder().encodeToString(pdfBytes));
+    } else {
+      headers.put("Content-Type", "application/json");
+      lambdaResp.put("isBase64Encoded", false);
+      lambdaResp.put("body", json);
+    }
+    lambdaResp.put("headers", headers);
+    objectMapper.writeValue(output, lambdaResp);
+  }
+
+  private void writeErrorResponse(OutputStream output, int statusCode, String errorMsg)
+      throws IOException {
+    Map<String, Object> errorResp = new HashMap<>();
+    errorResp.put("statusCode", statusCode);
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/json");
+    errorResp.put("headers", headers);
+    errorResp.put("isBase64Encoded", false);
+    errorResp.put("body", String.format("{\"error\":\"%s\"}", errorMsg));
+    objectMapper.writeValue(output, errorResp);
   }
 }

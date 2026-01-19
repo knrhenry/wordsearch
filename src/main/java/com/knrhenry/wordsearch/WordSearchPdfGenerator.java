@@ -1,7 +1,6 @@
 package com.knrhenry.wordsearch;
 
 import com.lowagie.text.Document;
-import com.lowagie.text.DocumentException;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.Paragraph;
@@ -9,8 +8,8 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 /** Utility class for generating a PDF representation of a word search puzzle. */
@@ -19,19 +18,20 @@ public class WordSearchPdfGenerator {
   public WordSearchPdfGenerator() {}
 
   /**
-   * Generates a PDF file of the word search grid and word list to an OutputStream using OpenPDF.
-   * Adds a header to the PDF.
+   * Generates a PDF file of the word search grid and word list and returns it as a byte array. Adds
+   * a header to the PDF.
    *
-   * @param out OutputStream to write PDF
-   * @param grid The word search grid
-   * @param gridSize The size of the grid
-   * @param words List of words to include in the word list
+   * @param wordSearch The WordSearch puzzle instance
+   * @return PDF as byte array
    * @throws IOException If PDF generation fails
    */
-  public void generatePdf(OutputStream out, char[][] grid, int gridSize, List<String> words)
-      throws IOException {
-    try {
-      Document document = new Document();
+  public byte[] generatePdf(WordSearch wordSearch) throws IOException {
+    if (wordSearch == null) throw new NullPointerException("WordSearch must not be null");
+    char[][] grid = wordSearch.getGrid();
+    int gridSize = grid.length;
+    List<String> words = wordSearch.getWords();
+    Document document = new Document();
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       PdfWriter.getInstance(document, out);
       document.open();
       // Add a header to the PDF
@@ -71,8 +71,7 @@ public class WordSearchPdfGenerator {
         }
       }
       document.close();
-    } catch (DocumentException e) {
-      throw new IOException("Failed to generate PDF", e);
+      return out.toByteArray();
     }
   }
 }

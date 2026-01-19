@@ -1,0 +1,36 @@
+package com.knrhenry.wordsearch.dto;
+
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+public class WordSearchRequest {
+  @Schema(
+      description =
+          "List of words to include in the puzzle. Max 20 words, each up to 30 characters.",
+      maxItems = 20,
+      minItems = 1,
+      examples = {"[\"apple\",\"banana\",\"cherry\"]"})
+  private List<String> words;
+
+  @Schema(
+      description = "Set to true to generate a PDF. If false, returns plain text.",
+      defaultValue = "false",
+      examples = {"false"})
+  private boolean pdf;
+
+  public List<String> getWords() {
+    return words;
+  }
+
+  public void setWords(List<String> words) {
+    this.words = words;
+  }
+
+  public boolean isPdf() {
+    return pdf;
+  }
+
+  public void setPdf(boolean pdf) {
+    this.pdf = pdf;
+  }
+}

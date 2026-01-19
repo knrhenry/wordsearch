@@ -2,6 +2,8 @@ package com.knrhenry.wordsearch;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
+import com.knrhenry.wordsearch.dto.WordSearchRequest;
+import com.knrhenry.wordsearch.dto.WordSearchResult;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -9,11 +11,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -32,25 +31,7 @@ public class WordSearchResource {
 
   private static final String APPLICATION_PDF = "application/pdf";
 
-  /** Request object for word search generation. */
-  public static class WordSearchRequest {
-    @Schema(
-        description =
-            "List of words to include in the puzzle. Max 20 words, each up to 30 characters.",
-        maxItems = 20,
-        minItems = 1,
-        examples = {"[\"apple\",\"banana\",\"cherry\"]"})
-    public List<String> words;
-
-    @Schema(
-        description = "Set to true to generate a PDF. If false, returns plain text.",
-        defaultValue = "false",
-        examples = {"false"})
-    public boolean pdf;
-  }
-
-  @Inject WordSearchFactory wordSearchFactory;
-  @Inject WordSearchPdfGenerator pdfGenerator;
+  @Inject WordSearchService wordSearchService;
 
   /**
    * Generates a word search puzzle grid or PDF from a list of words.
@@ -154,52 +135,37 @@ public class WordSearchResource {
                 schema = @Schema(type = SchemaType.OBJECT, implementation = Map.class)))
   })
   public Response generateWordSearch(WordSearchRequest req) {
-    if (req.words == null || req.words.isEmpty()) {
-      return Response.status(BAD_REQUEST)
-          .entity(Collections.singletonMap("error", "Word list must not be empty."))
+    WordSearchResult result = wordSearchService.generatePuzzle(req);
+    if (result.isError()) {
+      int status =
+          result.getError().contains("Too many words")
+                  || result.getError().contains("empty")
+                  || result.getError().contains("exceeds")
+              ? BAD_REQUEST.getStatusCode()
+              : 500;
+      return Response.status(status)
+          .entity(Collections.singletonMap("error", result.getError()))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
-    if (req.words.size() > 20) {
-      return Response.status(BAD_REQUEST)
-          .entity(Collections.singletonMap("error", "Too many words. Maximum allowed is 20."))
-          .type(MediaType.APPLICATION_JSON)
+    if (result.isPdf()) {
+      return Response.ok(result.getPdfBytes(), APPLICATION_PDF)
+          .header("Content-Disposition", "inline; filename=wordsearch.pdf")
+          .header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+          .header("Pragma", "no-cache")
+          .header("Expires", "0")
           .build();
-    }
-    try {
-      WordSearch ws = wordSearchFactory.create(req.words);
-      char[][] grid = ws.getGrid();
-      if (req.pdf) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        pdfGenerator.generatePdf(baos, grid, grid.length, req.words);
-        return Response.ok(baos.toByteArray(), APPLICATION_PDF)
-            .header("Content-Disposition", "inline; filename=wordsearch.pdf")
-            .header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-            .header("Pragma", "no-cache")
-            .header("Expires", "0")
-            .build();
-      } else {
-        String[][] gridStr = new String[grid.length][grid[0].length];
-        for (int i = 0; i < grid.length; i++) {
-          for (int j = 0; j < grid[i].length; j++) {
-            gridStr[i][j] = String.valueOf(grid[i][j]);
-          }
+    } else {
+      String[][] gridStr = new String[result.getGrid().length][result.getGrid()[0].length];
+      for (int i = 0; i < result.getGrid().length; i++) {
+        for (int j = 0; j < result.getGrid()[i].length; j++) {
+          gridStr[i][j] = String.valueOf(result.getGrid()[i][j]);
         }
-        Map<String, Object> response = new HashMap<>();
-        response.put("grid", gridStr);
-        response.put("words", req.words);
-        return Response.ok(response, MediaType.APPLICATION_JSON).build();
       }
-    } catch (IllegalArgumentException e) {
-      return Response.status(BAD_REQUEST)
-          .entity(Collections.singletonMap("error", e.getMessage()))
-          .type(MediaType.APPLICATION_JSON)
-          .build();
-    } catch (IOException e) {
-      return Response.serverError()
-          .entity(Collections.singletonMap("error", "PDF generation failed."))
-          .type(MediaType.APPLICATION_JSON)
-          .build();
+      Map<String, Object> response = new HashMap<>();
+      response.put("grid", gridStr);
+      response.put("words", result.getWords());
+      return Response.ok(response, MediaType.APPLICATION_JSON).build();
     }
   }
 }
