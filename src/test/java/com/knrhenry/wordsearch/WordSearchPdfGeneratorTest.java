@@ -18,7 +18,7 @@ class WordSearchPdfGeneratorTest {
     List<String> words = List.of("apple", "banana", "cherry");
     WordSearch ws = WordSearch.create(words);
     WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
-    byte[] pdfBytes = pdfGen.generatePdf(ws);
+    byte[] pdfBytes = pdfGen.generatePdf(ws, null);
     assertThat("PDF should be larger than 100 bytes", pdfBytes.length, greaterThan(100));
     assertThat("PDF should start with %PDF-", new String(pdfBytes, 0, 5), is("%PDF-"));
   }
@@ -31,7 +31,7 @@ class WordSearchPdfGeneratorTest {
             "ape", "emu", "gnu", "yak", "eel", "ram", "hog", "jay");
     WordSearch ws = WordSearch.create(words);
     WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
-    byte[] pdfBytes = pdfGen.generatePdf(ws);
+    byte[] pdfBytes = pdfGen.generatePdf(ws, null);
     assertThat("PDF should be larger than 100 bytes", pdfBytes.length, greaterThan(100));
     assertThat("PDF should start with %PDF-", new String(pdfBytes, 0, 5), is("%PDF-"));
   }
@@ -40,7 +40,7 @@ class WordSearchPdfGeneratorTest {
   void testGeneratePdfWithEmptyWords() throws Exception {
     WordSearch ws = WordSearch.create(List.of("A")); // minimal grid
     WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
-    byte[] pdfBytes = pdfGen.generatePdf(ws);
+    byte[] pdfBytes = pdfGen.generatePdf(ws, null);
     assertThat("PDF should be larger than 100 bytes", pdfBytes.length, greaterThan(100));
     assertThat("PDF should start with %PDF-", new String(pdfBytes, 0, 5), is("%PDF-"));
   }
@@ -51,7 +51,7 @@ class WordSearchPdfGeneratorTest {
     List<String> words = List.of(longWord);
     WordSearch ws = WordSearch.create(words);
     WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
-    byte[] pdfBytes = pdfGen.generatePdf(ws);
+    byte[] pdfBytes = pdfGen.generatePdf(ws, null);
     assertThat("PDF should be larger than 100 bytes", pdfBytes.length, greaterThan(100));
     assertThat("PDF should start with %PDF-", new String(pdfBytes, 0, 5), is("%PDF-"));
     // Ensure only one page is generated
@@ -82,7 +82,7 @@ class WordSearchPdfGeneratorTest {
     WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
     assertThrows(
         NullPointerException.class,
-        () -> pdfGen.generatePdf(null),
+        () -> pdfGen.generatePdf(null, null),
         "Should throw NullPointerException for null WordSearch");
   }
 
@@ -91,8 +91,24 @@ class WordSearchPdfGeneratorTest {
     List<String> words = List.of("café", "naïve", "coöperate", "façade");
     WordSearch ws = WordSearch.create(words);
     WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
-    byte[] pdfBytes = pdfGen.generatePdf(ws);
+    byte[] pdfBytes = pdfGen.generatePdf(ws, null);
     assertThat("PDF should be larger than 100 bytes", pdfBytes.length, greaterThan(100));
     assertThat("PDF should start with %PDF-", new String(pdfBytes, 0, 5), is("%PDF-"));
+  }
+
+  @Test
+  void testGeneratePdfWithFooterUrl() throws Exception {
+    List<String> words = List.of("apple", "banana", "cherry");
+    WordSearch ws = WordSearch.create(words);
+    WordSearchPdfGenerator pdfGen = new WordSearchPdfGenerator();
+    String footerUrl = "https://example.com/";
+    byte[] pdfBytes = pdfGen.generatePdf(ws, footerUrl);
+    assertThat("PDF should be larger than 100 bytes", pdfBytes.length, greaterThan(100));
+    assertThat("PDF should start with %PDF-", new String(pdfBytes, 0, 5), is("%PDF-"));
+    try (PDDocument doc = PDDocument.load(pdfBytes)) {
+      PDFTextStripper stripper = new PDFTextStripper();
+      String pdfText = stripper.getText(doc);
+      assertThat("PDF should contain the footer URL", pdfText, containsString(footerUrl));
+    }
   }
 }

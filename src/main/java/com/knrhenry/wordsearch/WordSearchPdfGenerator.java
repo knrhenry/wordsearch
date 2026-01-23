@@ -26,7 +26,7 @@ public class WordSearchPdfGenerator {
    * @throws IOException If PDF generation fails
    * @throws NullPointerException if the WordSearch is null
    */
-  public byte[] generatePdf(WordSearch wordSearch) throws IOException {
+  public byte[] generatePdf(WordSearch wordSearch, String footerUrl) throws IOException {
     if (wordSearch == null) {
       throw new NullPointerException("WordSearch must not be null");
     }
@@ -107,6 +107,19 @@ public class WordSearchPdfGenerator {
           } else {
             wordLine.append(", ");
           }
+        }
+        // Draw footer URL if provided
+        if (footerUrl != null && !footerUrl.isBlank()) {
+          float footerFontSize = 9f;
+          PDFont footerFont = PDType1Font.HELVETICA_OBLIQUE;
+          float footerY = margin + 8; // 8pt above bottom margin
+          float footerTextWidth = footerFont.getStringWidth(footerUrl) / 1000 * footerFontSize;
+          float footerX = margin + (usableWidth - footerTextWidth) / 2;
+          content.beginText();
+          content.setFont(footerFont, footerFontSize);
+          content.newLineAtOffset(footerX, footerY);
+          content.showText(footerUrl);
+          content.endText();
         }
       }
       doc.save(out);

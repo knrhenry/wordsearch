@@ -127,7 +127,7 @@ class WordSearchServiceTest {
   void testGeneratePuzzleReturnsErrorForIOExceptionDuringPdfGeneration() throws Exception {
     doThrow(new IOException("Simulated PDF failure"))
         .when(pdfGenerator)
-        .generatePdf(any(WordSearch.class));
+        .generatePdf(any(WordSearch.class), any());
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(List.of("apple"));
     req.setPdf(true);
@@ -143,7 +143,7 @@ class WordSearchServiceTest {
   void testGeneratePuzzleReturnsErrorForDocumentExceptionDuringPdfGeneration() throws Exception {
     doThrow(new DocumentException("Simulated PDF failure"))
         .when(pdfGenerator)
-        .generatePdf(any(WordSearch.class));
+        .generatePdf(any(WordSearch.class), any());
     WordSearchRequest req = new WordSearchRequest();
     req.setWords(List.of("apple"));
     req.setPdf(true);
@@ -181,7 +181,7 @@ class WordSearchServiceTest {
               return expectedBytes;
             })
         .when(pdfGenerator)
-        .generatePdf(any(WordSearch.class));
+        .generatePdf(any(WordSearch.class), any());
   }
 
   private void prepareJsonGeneratorMock(List<String> expectedWords, ObjectNode expectedJson)

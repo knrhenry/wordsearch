@@ -15,9 +15,10 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.27.1</quarkus.platform.version>
+        <quarkus.platform.version>3.27.2</quarkus.platform.version>
         <skipITs>false</skipITs>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
+        <smallrye-openapi.version>4.0.13</smallrye-openapi.version>
     </properties>
 
     <dependencyManagement>
@@ -48,6 +49,7 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-openapi</artifactId>
+            <version>${quarkus.platform.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -256,8 +258,22 @@
             </plugin>
         </plugins>
     </build>
-    <!-- Lambda (JAR) build profile -->
     <profiles>
+        <profile>
+            <id>quarkus</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>frontend</directory>
+                        <filtering>false</filtering>
+                        <targetPath>META-INF/resources</targetPath>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
         <profile>
             <id>lambda</id>
             <properties>

@@ -169,13 +169,13 @@ public class WordSearchResourceIT {
   @ApplicationScoped
   public static class TestPdfGeneratorFailure extends WordSearchPdfGenerator {
     @Override
-    public byte[] generatePdf(WordSearch wordSearch) throws IOException {
+    public byte[] generatePdf(WordSearch wordSearch, String footerUrl) throws IOException {
       if (wordSearch != null
           && !wordSearch.getWords().isEmpty()
           && wordSearch.getWords().get(0).equals("exception")) {
         throw new IOException("PDF generation failed");
       } else {
-        return super.generatePdf(wordSearch);
+        return super.generatePdf(wordSearch, footerUrl);
       }
     }
   }

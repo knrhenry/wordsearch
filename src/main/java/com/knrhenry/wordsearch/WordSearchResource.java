@@ -26,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /** REST API for generating word search puzzles. */
 @Tag(name = "Word Search", description = "Word Search puzzle generator API")
-@Path("/api")
+@Path("/wordsearch")
 public class WordSearchResource {
 
   private static final String APPLICATION_PDF = "application/pdf";
@@ -40,7 +40,6 @@ public class WordSearchResource {
    * @return the word search grid as text or PDF
    */
   @POST
-  @Path("/wordsearch")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({MediaType.APPLICATION_JSON, APPLICATION_PDF})
   @Operation(

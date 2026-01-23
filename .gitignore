@@ -37,3 +37,4 @@ build/
 
 
 aws-credentials.txt
+/frontend/config.js

@@ -19,6 +19,11 @@ public class WordSearchRequest {
       examples = {"false"})
   private boolean pdf;
 
+  @Schema(
+      description = "URL for the footer. This will be appended at the bottom of the puzzle.",
+      examples = {"http://example.com/footer"})
+  private String footerUrl;
+
   public List<String> getWords() {
     return words;
   }
@@ -33,5 +38,13 @@ public class WordSearchRequest {
 
   public void setPdf(boolean pdf) {
     this.pdf = pdf;
+  }
+
+  public String getFooterUrl() {
+    return footerUrl;
+  }
+
+  public void setFooterUrl(String footerUrl) {
+    this.footerUrl = footerUrl;
   }
 }

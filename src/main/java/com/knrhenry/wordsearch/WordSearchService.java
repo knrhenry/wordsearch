@@ -40,7 +40,7 @@ public class WordSearchService {
       result.setWords(request.getWords());
       result.setPdf(request.isPdf());
       if (request.isPdf()) {
-        result.setPdfBytes(pdfGenerator.generatePdf(ws));
+        result.setPdfBytes(pdfGenerator.generatePdf(ws, request.getFooterUrl()));
       } else {
         result.setJson(jsonGenerator.generateJson(ws));
       }

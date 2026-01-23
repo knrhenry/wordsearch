@@ -18,61 +18,55 @@ import java.util.Map;
 public class WordSearchLambdaHandler implements RequestStreamHandler {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
+  private final WordSearchPdfGenerator pdfGenerator;
+  private final WordSearchJsonGenerator jsonGenerator;
+
+  // Default constructor for Lambda
+  public WordSearchLambdaHandler() {
+    this.pdfGenerator = new WordSearchPdfGenerator();
+    this.jsonGenerator = new WordSearchJsonGenerator();
+  }
+
+  // Constructor for tests (manual injection)
+  WordSearchLambdaHandler(
+      WordSearchPdfGenerator pdfGenerator, WordSearchJsonGenerator jsonGenerator) {
+    this.pdfGenerator = pdfGenerator;
+    this.jsonGenerator = jsonGenerator;
+  }
+
   @Override
   public void handleRequest(InputStream input, OutputStream output, Context context)
       throws IOException {
     try {
       JsonNode event = objectMapper.readTree(input);
-      boolean wantsPdf = false;
       List<String> words = null;
-      // Parse input for words and pdf flag
-      if (event.has("queryStringParameters")) {
-        JsonNode qsp = event.get("queryStringParameters");
-        if (qsp.has("pdf")) {
-          wantsPdf = qsp.get("pdf").asBoolean(false);
-        }
-        if (qsp.has("words")) {
-          String wordsStr = qsp.get("words").asText("");
-          words = parseWords(wordsStr);
-        }
+      boolean wantsPdf = false;
+      // Expect only body as JSON
+      if (!event.has("body")) {
+        throw new WordSearchException("No request body provided");
       }
-      if (words == null && event.has("body")) {
-        JsonNode bodyNode = event.get("body");
-        if (bodyNode.isTextual()) {
-          try {
-            bodyNode = objectMapper.readTree(bodyNode.asText());
-          } catch (Exception ignored) {
-            // Exception ignored intentionally: fallback to original bodyNode
-          }
-        }
-        if (bodyNode.has("pdf")) {
-          wantsPdf = bodyNode.get("pdf").asBoolean(false);
-        }
-        if (bodyNode.has("words")) {
-          JsonNode wordsNode = bodyNode.get("words");
-          if (wordsNode.isArray()) {
-            words =
-                objectMapper.convertValue(
-                    wordsNode,
-                    objectMapper
-                        .getTypeFactory()
-                        .constructCollectionType(List.class, String.class));
-          } else {
-            String wordsStr = wordsNode.asText("");
-            words = parseWords(wordsStr);
-          }
-        }
+      JsonNode bodyNode = event.get("body");
+      if (bodyNode.isTextual()) {
+        bodyNode = objectMapper.readTree(bodyNode.asText());
       }
-      if (words == null) {
-        throw new WordSearchException("No words provided");
+      if (!bodyNode.has("words") || !bodyNode.get("words").isArray()) {
+        throw new WordSearchException("'words' must be an array in the request body");
       }
+      words =
+          objectMapper.convertValue(
+              bodyNode.get("words"),
+              objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+      if (bodyNode.has("pdf")) {
+        wantsPdf = bodyNode.get("pdf").asBoolean(false);
+      }
+      String footerUrl = bodyNode.has("footerUrl") ? bodyNode.get("footerUrl").asText("") : "";
       WordSearch ws = WordSearch.create(words);
       byte[] pdfBytes = null;
       ObjectNode jsonNode = null;
       if (wantsPdf) {
-        pdfBytes = new WordSearchPdfGenerator().generatePdf(ws);
+        pdfBytes = pdfGenerator.generatePdf(ws, footerUrl);
       } else {
-        jsonNode = new WordSearchJsonGenerator().generateJson(ws);
+        jsonNode = jsonGenerator.generateJson(ws);
       }
       writeSuccessResponse(output, wantsPdf, pdfBytes, jsonNode);
     } catch (WordSearchException e) {
